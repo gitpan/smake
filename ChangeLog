@@ -1,0 +1,24 @@
+
+  C h a n g e L o g   o f   S M a k e
+  ___________________________________________________________________________
+
+  Changes between 1.2b0 and 1.2b1
+  -------------------------------
+
+  970504 o rewritten the manpage
+
+  Changes between 1.11 and 1.2b0
+  ------------------------------
+
+  970504 o reorganized the source code
+         o rewritten the GNU autoconf stuff
+         o created test suite
+
+  Changes between *GENESIS* and 1.11
+  ----------------------------------
+
+  9407xx o *GENESIS*
+            initially written in July 1994 for the privat project Push
+            to get rid of the Makefile chaos in the Push source tree.
+  ___________________________________________________________________________
+

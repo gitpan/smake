@@ -1,0 +1,136 @@
+dnl
+dnl Process this file with autoconf to produce a configure script.
+dnl
+
+AC_PREREQ(2.10)dnl
+AC_REVISION($Revision: 2.0$)
+echo "Configuring for SMake `./etc/newvers -l c -d smake_version.pl`"
+
+AC_CONFIG_AUX_DIR(etc)
+AC_INIT(README)
+AC_CONFIG_HEADER(config_ac.h)dnl
+AC_PREFIX_DEFAULT(/usr/local)
+
+AC_SET_MAKE
+AC_PROG_INSTALL
+INSTALL_DATA='${INSTALL} -m 644'
+INSTALL_PROGRAM="${INSTALL_PROGRAM} -m 755"
+
+AC_MSG_CHECKING([for Perl language])
+AC_ARG_WITH(perl,dnl
+[  --with-perl             force the usage of a specific installed Perl],
+perlprog=$with_perl
+perlvers=`$perlprog -v | grep version | sed -e 's/.* version //' -e 's/ with.*//'`
+,
+TMPFILE=/tmp/x.$$
+rm -f $TMPFILE
+touch $TMPFILE
+c=0
+for dir in `echo $PATH | sed -e 's/:/ /g'` /tmp; do
+    for perl in perl5 perl miniperl; do
+         if test -f "$dir/$perl"; then
+             perl="$dir/$perl"
+             version=`$perl -v | grep version | sed -e 's/.* version //' -e 's/ with.*//'`
+             versionnum="`echo $version | sed -e 's/\.//g' -e 's/_//g'`"
+             versionnum=`expr $versionnum - $c`
+             echo "$versionnum $version $perl" >>$TMPFILE
+         fi
+    done
+    c=`expr $c + 1`
+done
+perlvers="`cat $TMPFILE | sort -u | tail -1 | cut '-d ' -f2`"
+perlprog="`cat $TMPFILE | sort -u | tail -1 | cut '-d ' -f3`"
+rm -f $TMPFILE
+)dnl
+PATH_PERL=$perlprog
+AC_MSG_RESULT([$perlprog v$perlvers])
+case $perlvers in
+    5.003* | 5.004* | 5.005* | 5.006* ) ;;
+	* ) AC_ERROR([latest Perl found is $perlvers, but at least Perl 5.003 is required.])
+esac
+AC_SUBST(PATH_PERL)
+AC_SUBST(perlprog)
+AC_SUBST(perlvers)
+if test -f $PATH_PERL; then
+	:
+else
+    AC_ERROR([required program ``perl'' not found])
+fi
+
+AC_UVAR_INIT
+AC_UVAR_VERB([dnl
+#   Imported pathes of the GNU ``configure'' command line:
+#            --srcdir=<srcdir>
+#            --prefix=<prefix>
+#       --exec-prefix=<exec_prefix>
+#   These are used in the above definitions.
+#
+])dnl
+AC_UVAR_SETQUOTE(srcdir, $srcdir)
+AC_UVAR_SETCHKQUOTE(prefix, $prefix)
+AC_UVAR_SETCHKQUOTE(exec_prefix, $prefix)
+AC_UVAR_VERB([dnl
+
+#   Actual installation pathes, Part I [NO EDIT NECESSARY]
+#
+#   Given default values are the exact pathes as recommended
+#   by Richard Stallman in his paper ``GNU Coding Standards'',
+#   as of 28 March 1994.
+#
+#   If these GNU installation pathes do not fit your
+#   individual needs, feel free to edit the given values!!
+#   But remember: than your Push installation is no longer
+#                 compliant to the GNU standards.
+#
+])dnl
+AC_UVAR_SET(bindir,        $exec_prefix/bin)
+AC_UVAR_SET(libdir,        $exec_prefix/lib)
+AC_UVAR_SET(datadir,       $prefix/lib)
+AC_UVAR_SET(statdir,       $prefix/lib)
+AC_UVAR_SET(includedir,    $prefix/include)
+AC_UVAR_SET(oldincludedir, /usr/include)
+AC_UVAR_SET(mandir,        $prefix/man/man1)
+AC_UVAR_SET(man1dir,       $prefix/man/man1)
+AC_UVAR_SET(man2dir,       $prefix/man/man1)
+AC_UVAR_SET(man3dir,       $prefix/man/man1)
+AC_UVAR_SET(man4dir,       $prefix/man/man1)
+AC_UVAR_SET(man5dir,       $prefix/man/man1)
+AC_UVAR_SET(man6dir,       $prefix/man/man1)
+AC_UVAR_SET(man7dir,       $prefix/man/man1)
+AC_UVAR_SET(man8dir,       $prefix/man/man1)
+AC_UVAR_SET(manext,        .1)
+AC_UVAR_SET(man1ext,       .1)
+AC_UVAR_SET(man2ext,       .2)
+AC_UVAR_SET(man3ext,       .3)
+AC_UVAR_SET(man4ext,       .4)
+AC_UVAR_SET(man5ext,       .5)
+AC_UVAR_SET(man6ext,       .6)
+AC_UVAR_SET(man7ext,       .7)
+AC_UVAR_SET(man8ext,       .8)
+AC_UVAR_VERB([dnl
+
+#   Actual installation pathes, Part II [NO EDIT NECESSARY]
+#
+#   The following pathes are GenOpt pathes and
+#   are additionally used by the Push installation.
+#
+#   These are not predefined by the GNU standard but
+#   used by the author for a long time.
+#
+])dnl
+AC_UVAR_SET(pkgdir,        $prefix)
+AC_UVAR_SET(infodir,       $prefix/info)
+AC_UVAR_SET(xaddir,        $prefix/xad)
+AC_UVAR_SET(tmpdir,        /tmp)
+AC_UVAR_OUTPUT
+
+AC_OUTPUT(dnl
+Makefile dnl
+t/Makefile dnl
+etc/unrequire dnl
+etc/crunch dnl
+,dnl
+chmod a+x etc/unrequire
+chmod a+x etc/crunch
+)dnl
+

@@ -1,0 +1,196 @@
+##
+##  Makefile -- SMake Makefile
+##  Copyright (c) 1997 Ralf S. Engelschall, All Rights Reserved. 
+##
+@SET_MAKE@
+
+# ------------------------------------------------
+#   DEFINITIONS
+# ------------------------------------------------
+
+#   installation tools
+INSTALL         = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA    = @INSTALL_DATA@
+MKDIR           = ./etc/mkinstalldirs
+
+#   installation paths
+prefix          = @prefix@
+exec_prefix     = @exec_prefix@
+bindir          = @bindir@
+libdir          = @libdir@
+mandir          = @mandir@
+
+#   Perl 5 language
+perlprog        = @perlprog@
+
+
+# ------------------------------------------------
+#   THE DEFAULT TARGETS
+# ------------------------------------------------
+
+all: config smake smkmf smake.1
+
+
+# ------------------------------------------------
+#   THE CONFIGURATION SUPPORT
+# ------------------------------------------------
+
+config: configure config_ac.h.in
+
+configure: configure.in aclocal.m4 acconfig.h
+	rm -f configure
+	autoconf configure.in >configure
+	chmod 770 configure
+
+config_ac.h.in: configure.in acconfig.h
+	rm -f config_ac.h.in
+	autoheader configure.in >config_ac.h.in
+
+# ------------------------------------------------
+#   THE RELEASE STUFF
+# ------------------------------------------------
+
+_GETDISTINFO = \
+    _version=`./etc/newvers -lc -d smake_version.pl`; \
+    _date=`date '+%y%m%d_%H%M'`
+
+_BUILDDIST = \
+    echo "Creating tarball..."; \
+    gtar --no-recursion -cvf - `find * -depth -print | sort` |\
+    tardy --user_number=1000  --user_name=rse \
+          --group_number=1000 --group_name=en \
+          --prefix=$${_distname} - |\
+    gzip >$${_tarball}; \
+    echo "Done"; \
+    ls -l $${_tarball}
+
+_NEWVERS = \
+	./etc/newvers -lc -p SMake $$OPT smake_version.pl; \
+	V=`./etc/newvers -lc -D smake_version.pl`;\
+	sed -e "s/Version .*(.*)/Version $$V/g" <README >README.n && mv README.n README
+
+_UPDATEVERS = \
+	V=`./etc/newvers -lc -d smake_version.pl`;\
+	./etc/newvers -lc -p SMake -r $$V smake_version.pl; \
+	V=`./etc/newvers -lc -D smake_version.pl`;\
+	sed -e "s/Version .*(.*)/Version $$V/g" <README >README.n && mv README.n README
+
+release: distclean fixperm
+	@$(_GETDISTINFO) \
+    _distname="smake-$${_version}"; \
+    _tarball="/tmp/$${_distname}.tar.gz"; \
+    echo "Release Distribution: SMake Version $$_version"; \
+    $(_BUILDDIST); \
+    mv /tmp/$${_distname}.tar.gz $${_distname}.tar.gz 
+
+snap: distclean fixperm
+	@$(_GETDISTINFO) \
+    _distname="smake-$${_version}-SNAP-$$_date"; \
+    _tarball="/tmp/$${_distname}.tar.gz"; \
+    echo "Snap of whole source tree: SMake Version $$_version as of $$_date"; \
+    $(_BUILDDIST); \
+    mv /tmp/$${_distname}.tar.gz $${_distname}.tar.gz 
+
+new-version:
+	OPT=-iv; $(_NEWVERS)
+
+new-revision:
+	OPT=-ir; $(_NEWVERS)
+
+new-patchlevel:
+	OPT=-iP; $(_NEWVERS)
+
+new-betalevel:
+	OPT=-ib; $(_NEWVERS)
+
+new-alphalevel:
+	OPT=-ia; $(_NEWVERS)
+
+new-snaplevel:
+	OPT=-is; $(_NEWVERS)
+
+new-release:
+	OPT=-r$(R); $(_NEWVERS)
+
+update-version:
+	$(_UPDATEVERS)
+
+
+# ------------------------------------------------
+#   THE PROGRAM
+# ------------------------------------------------
+
+GEN_BIN_SRC=\
+	rm -f $@; \
+	./etc/unrequire $$src | \
+	sed -e "s|\@PATH_PERL\@|$(perlprog)|g" \
+		-e "s|\@includedir\@|$(libdir)/include|g" >$@; \
+	chmod a+x $@
+
+smake: smake_smake.pl smake_getopts.pl smake_misc.pl smake_file.pl smake_version.pl
+	src=smake_smake.pl; $(GEN_BIN_SRC)
+
+smkmf: smake_smkmf.pl smake_getopts.pl smake_misc.pl smake_file.pl smake_version.pl
+	src=smake_smkmf.pl; $(GEN_BIN_SRC)
+
+fixperm:
+	./etc/fixperm *
+
+# ------------------------------------------------
+#   THE DOCUMENTATION
+# ------------------------------------------------
+
+smake.1: smake.pod smake_version.pl
+	V=`./etc/newvers -l c -D smake_version.pl`; \
+	sed -e "s|\@V\@|$$V|g" -e "s|\@prefix\@|$(prefix)|" <smake.pod >/tmp/smake.pod; \
+	pod2man --section=1 \
+	        --center="Ralf S. Engelschall" \
+			--release="EN" \
+			/tmp/smake.pod >smake.1 && \
+	rm -f /tmp/smake.pod
+
+
+# ------------------------------------------------
+#   TEST SUITE
+# ------------------------------------------------
+
+test:
+	@cd t; make test
+
+
+# ------------------------------------------------
+#   INSTALLATION
+# ------------------------------------------------
+
+install: all
+	$(MKDIR) $(bindir)
+	$(MKDIR) $(mandir)/man1
+	$(MKDIR) $(libdir)/include
+	$(INSTALL_PROGRAM) smake $(bindir)/smake
+	$(INSTALL_PROGRAM) smkmf $(bindir)/smkmf
+	$(INSTALL_DATA) smake.1 $(mandir)/man1/smake.1
+	rm -f $(mandir)/man1/smkmf.1 && ln $(mandir)/man1/smake.1 $(mandir)/man1/smkmf.1
+	cp -p include/* $(libdir)/include/
+
+# ------------------------------------------------
+#   CLEANUP
+# ------------------------------------------------
+
+clean:
+	rm -f smake smkmf 
+
+realclean:
+	-@make clean
+	rm -f smake.1
+
+distclean:
+	-@make clean
+	-rm -f config_ac.h config_sc.h
+	-rm -f config.status config.cache config.log
+	-rm -f Makefile
+	-rm -f t/Makefile
+	-rm -f etc/unrequire
+	-rm -f etc/crunch
+
+##EOF##

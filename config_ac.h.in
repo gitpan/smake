@@ -1,0 +1,10 @@
+/* config_ac.h.in.  Generated automatically from configure.in by autoheader.  */
+#ifndef CONFIG_AC_H
+#define CONFIG_AC_H
+/*
+**  config_ac.h -- AUTO configuration header file
+**  Copyright (c) Ralf S. Engelschall, <rse@engelschall.com>
+*/
+
+
+#endif /* CONFIG_AC_H */
